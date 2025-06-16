@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CarrinhoItem } from '../models/carrinho-item.interface';
 import { Produto } from '../models/produto.model';
@@ -12,12 +13,14 @@ export class CarrinhoService {
 
   private itens: CarrinhoItem[] = [];
 
-  constructor() {
-    // Carregar carrinho do localStorage se existir
-    const carrinhoSalvo = localStorage.getItem('carrinho');
-    if (carrinhoSalvo) {
-      this.itens = JSON.parse(carrinhoSalvo);
-      this.carrinhoSubject.next(this.itens);
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    // Carregar carrinho do localStorage se existir e estivermos no browser
+    if (isPlatformBrowser(this.platformId)) {
+      const carrinhoSalvo = localStorage.getItem('carrinho');
+      if (carrinhoSalvo) {
+        this.itens = JSON.parse(carrinhoSalvo);
+        this.carrinhoSubject.next(this.itens);
+      }
     }
   }
   adicionarProduto(produto: Produto): void {
@@ -78,10 +81,11 @@ export class CarrinhoService {
     this.itens = [];
     this.atualizarCarrinho();
   }
-
   private atualizarCarrinho(): void {
     this.carrinhoSubject.next(this.itens);
-    localStorage.setItem('carrinho', JSON.stringify(this.itens));
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('carrinho', JSON.stringify(this.itens));
+    }
   }
 
   // Método auxiliar para formatar preço
